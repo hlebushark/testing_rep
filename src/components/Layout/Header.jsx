@@ -80,26 +80,57 @@ const Header = () => {
   };
 
   const handleCreateProduct = async () => {
+    
     try {
       const productData = {
-        title: newProduct.title,
-        description: newProduct.description,
-        price: parseFloat(newProduct.price),
+        title: newProduct.title.trim(),
+        description: newProduct.description.trim(),
+        price: parseFloat(newProduct.price) || 0,
         category: newProduct.category,
-        stock: parseInt(newProduct.stock),
-        brand: newProduct.brand || undefined,
+        stock: parseInt(newProduct.stock) || 0,
+        brand: newProduct.brand?.trim() || '',
         discountPercentage: 0,
-        rating: 0
+        rating: 0,
+        thumbnail: 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=New+Product'
       };
 
-      await createProduct(productData).unwrap();
-      
+      // Проверяем обязательные поля
+      if (!productData.title || !productData.description || !productData.category || productData.price <= 0) {
+        throw new Error('Please fill all required fields with valid data');
+      }
+
+      // 1. Сначала создаем локальный продукт
+      const localProductId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const localProduct = {
+        ...productData,
+        id: localProductId,
+        isLocal: true,
+        isNewlyCreated: true,
+        createdAt: new Date().toISOString()
+      };
+
+      // Сохраняем в localStorage
+      const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+      localProducts.unshift(localProduct);
+      localStorage.setItem('local_products', JSON.stringify(localProducts));
+
+      // 2. Пытаемся создать через API (симуляция)
+      try {
+        await createProduct(productData).unwrap();
+        console.log('API product creation simulated');
+      } catch (apiError) {
+        console.log('API simulation failed, but local product created');
+      }
+
+      // 3. Показываем успешное сообщение
       setSnackbar({
         open: true,
-        message: 'Product created (simulated)',
-        severity: 'success'
+        message: '✅ Product created successfully!',
+        severity: 'success',
+        productId: localProductId
       });
       
+      // 4. Закрываем диалог и сбрасываем форму
       setCreateDialogOpen(false);
       setNewProduct({
         title: '',
@@ -110,23 +141,23 @@ const Header = () => {
         brand: ''
       });
       
-      // Обновляем список через 1 секунду
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // 5. Отправляем событие для обновления списка продуктов
+      window.dispatchEvent(new Event('localProductsUpdated'));
       
     } catch (error) {
+      console.error('Create product error:', error);
       setSnackbar({
         open: true,
-        message: `Error: ${error.data?.message || 'Failed to create product'}`,
-        severity: 'error'
+        message: error.message || 'Failed to create product. Please check the form data.',
+        severity: 'error',
+        productId: null
       });
     }
   };
 
   return (
     <>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      <AppBar position="fixed" sx={{zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <Typography variant="h6" component={Link} to="/" sx={{ flexGrow: 1, textDecoration: 'none', color: 'white' }}>
             Product Manager
