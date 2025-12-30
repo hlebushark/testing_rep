@@ -6,59 +6,131 @@ import {
   Typography,
   Button,
   Box,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../../features/auth/authSlice';
 import { useDeleteProductMutation } from '../../api/productsApi';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onEdit, onDelete }) => {
   const isAdmin = useSelector(selectIsAdmin);
   const [deleteProduct] = useDeleteProductMutation();
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm(`Delete "${product.title}"? This is only a simulation.`)) {
       try {
         await deleteProduct(product.id).unwrap();
+        if (onDelete) onDelete();
       } catch (error) {
-        console.error('Failed to delete product:', error);
+        console.error('Delete error:', error);
       }
     }
   };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      position: 'relative',
+      transition: 'transform 0.2s',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: 6
+      }
+    }}>
+      {isAdmin && (
+        <Box sx={{ 
+          position: 'absolute', 
+          top: 8, 
+          right: 8, 
+          display: 'flex', 
+          gap: 1,
+          zIndex: 1
+        }}>
+          <Tooltip title="Edit">
+            <IconButton 
+              size="small" 
+              onClick={() => onEdit && onEdit(product)}
+              sx={{ 
+                bgcolor: 'white',
+                '&:hover': { bgcolor: 'primary.light', color: 'white' }
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Delete">
+            <IconButton 
+              size="small" 
+              onClick={handleDelete}
+              sx={{ 
+                bgcolor: 'white',
+                '&:hover': { bgcolor: 'error.light', color: 'white' }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+      
       <CardMedia
         component="img"
         height="200"
-        image={product.thumbnail || '/placeholder.jpg'}
+        image={product.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image'}
         alt={product.title}
+        sx={{ objectFit: 'cover' }}
       />
       
       <CardContent sx={{ flexGrow: 1 }}>
-        <Typography gutterBottom variant="h6" component="div">
-          {product.title}
+        <Typography gutterBottom variant="h6" component="div" noWrap>
+          {product.title || 'No Title'}
         </Typography>
         
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {product.description?.substring(0, 100)}...
+        <Typography variant="body2" color="text.secondary" sx={{ 
+          mb: 2,
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }}>
+          {product.description || 'No description'}
         </Typography>
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" color="primary">
-            ${product.price}
+            ${product.price || '0.00'}
+            {product.discountPercentage > 0 && (
+              <Typography component="span" variant="caption" color="error" sx={{ ml: 1 }}>
+                -{product.discountPercentage}%
+              </Typography>
+            )}
           </Typography>
-          <Chip label={product.category} size="small" />
+          {product.category && (
+            <Chip 
+              label={product.category} 
+              size="small" 
+              color="primary" 
+              variant="outlined"
+            />
+          )}
         </Box>
         
-        <Typography variant="body2">
-          Rating: {product.rating} ⭐
-        </Typography>
-        
-        <Typography variant="body2">
-          Stock: {product.stock}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="body2">
+            ⭐ {product.rating || '0'}
+          </Typography>
+          <Typography variant="body2" color={product.stock > 0 ? 'success.main' : 'error.main'}>
+            Stock: {product.stock || 0}
+          </Typography>
+        </Box>
       </CardContent>
       
       <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
@@ -66,33 +138,20 @@ const ProductCard = ({ product }) => {
           component={Link}
           to={`/products/${product.id}`}
           variant="outlined"
-          size="small"
           fullWidth
         >
           View Details
         </Button>
         
         {isAdmin && (
-          <>
-            <Button
-              component={Link}
-              to={`/products/${product.id}/edit`}
-              variant="contained"
-              size="small"
-              color="primary"
-            >
-              Edit
-            </Button>
-            
-            <Button
-              variant="contained"
-              size="small"
-              color="error"
-              onClick={handleDelete}
-            >
-              Delete
-            </Button>
-          </>
+          <Button
+            variant="contained"
+            component={Link}
+            to={`/products/${product.id}/edit`}
+            fullWidth
+          >
+            Edit
+          </Button>
         )}
       </Box>
     </Card>
