@@ -21,12 +21,6 @@ import {
   useUpdateProductMutation, 
   useCreateProductMutation 
 } from '../api/productsApi';
-import { 
-  saveLocalProduct, 
-  deleteLocalProduct, 
-  generateLocalId,
-  getLocalProducts 
-} from '../utils/localProductsStore';
 
 const EditProductPage = () => {
   const { id } = useParams();
@@ -52,12 +46,14 @@ const EditProductPage = () => {
     stock: '',
     brand: '',
     discountPercentage: '',
-    rating: ''
+    rating: '',
+    thumbnail: ''
   });
   
   const [localProduct, setLocalProduct] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [createdProductId, setCreatedProductId] = useState(null);
 
   // Категории
   const categories = [
@@ -90,8 +86,8 @@ const EditProductPage = () => {
   // Загрузка данных
   useEffect(() => {
     if (isLocalProduct) {
-      // Загружаем локальный продукт
-      const localProducts = getLocalProducts();
+      // Загружаем локальный продукт из localStorage
+      const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
       const product = localProducts.find(p => p.id === id);
       if (product) {
         setLocalProduct(product);
@@ -103,7 +99,8 @@ const EditProductPage = () => {
           stock: product.stock || '',
           brand: product.brand || '',
           discountPercentage: product.discountPercentage || '',
-          rating: product.rating || ''
+          rating: product.rating || '',
+          thumbnail: product.thumbnail || ''
         });
       }
     } else if (apiProduct && !isNew) {
@@ -116,7 +113,8 @@ const EditProductPage = () => {
         stock: apiProduct.stock || '',
         brand: apiProduct.brand || '',
         discountPercentage: apiProduct.discountPercentage || '',
-        rating: apiProduct.rating || ''
+        rating: apiProduct.rating || '',
+        thumbnail: apiProduct.thumbnail || ''
       });
     }
   }, [apiProduct, id, isNew, isLocalProduct]);
@@ -146,27 +144,34 @@ const EditProductPage = () => {
       const productData = {
         title: formData.title,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: parseFloat(formData.price) || 0,
         category: formData.category,
-        stock: parseInt(formData.stock),
+        stock: parseInt(formData.stock) || 0,
         brand: formData.brand || '',
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
         rating: formData.rating ? parseFloat(formData.rating) : 0,
-        thumbnail: 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=Product+Image'
+        thumbnail: formData.thumbnail || 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=Product+Image'
       };
+
+      let savedProductId = id;
 
       if (isNew) {
         // СОЗДАНИЕ нового продукта
         const newProduct = {
           ...productData,
-          id: generateLocalId(),
+          id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           isLocal: true,
           createdAt: new Date().toISOString()
         };
 
         // Сохраняем локально
-        saveLocalProduct(newProduct);
+        const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+        localProducts.push(newProduct);
+        localStorage.setItem('local_products', JSON.stringify(localProducts));
         
+        savedProductId = newProduct.id;
+        setCreatedProductId(savedProductId);
+
         // Пытаемся отправить на API (симуляция)
         try {
           await createApiProduct(productData).unwrap();
@@ -176,10 +181,15 @@ const EditProductPage = () => {
 
         setMessage({
           type: 'success',
-          text: 'Product created and saved locally!'
+          text: 'Product created successfully!'
         });
         
-        setTimeout(() => navigate('/products'), 1500);
+        setSnackbarOpen(true);
+        
+        // После показа уведомления переходим к продукту
+        setTimeout(() => {
+          navigate(`/products/${savedProductId}`);
+        }, 1500);
         
       } else if (isLocalProduct) {
         // РЕДАКТИРОВАНИЕ локального продукта
@@ -189,14 +199,24 @@ const EditProductPage = () => {
           updatedAt: new Date().toISOString()
         };
 
-        saveLocalProduct(updatedProduct);
+        // Обновляем в localStorage
+        const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+        const updatedProducts = localProducts.map(p => 
+          p.id === id ? updatedProduct : p
+        );
+        localStorage.setItem('local_products', JSON.stringify(updatedProducts));
         
         setMessage({
           type: 'success',
-          text: 'Local product updated!'
+          text: 'Product updated successfully!'
         });
         
-        setTimeout(() => navigate(`/products/${id}`), 1500);
+        setSnackbarOpen(true);
+        
+        // После показа уведомления переходим к продукту
+        setTimeout(() => {
+          navigate(`/products/${id}`);
+        }, 1500);
         
       } else {
         // РЕДАКТИРОВАНИЕ API продукта
@@ -208,17 +228,30 @@ const EditProductPage = () => {
           ...productData,
           isLocal: false
         };
-        saveLocalProduct(apiProductCopy);
+        
+        const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+        const existingIndex = localProducts.findIndex(p => p.id === id);
+        
+        if (existingIndex >= 0) {
+          localProducts[existingIndex] = apiProductCopy;
+        } else {
+          localProducts.push(apiProductCopy);
+        }
+        
+        localStorage.setItem('local_products', JSON.stringify(localProducts));
         
         setMessage({
           type: 'success',
-          text: 'Product updated! Changes saved locally.'
+          text: 'Product updated successfully!'
         });
         
-        setTimeout(() => navigate(`/products/${id}`), 1500);
+        setSnackbarOpen(true);
+        
+        // После показа уведомления переходим к продукту
+        setTimeout(() => {
+          navigate(`/products/${id}`);
+        }, 1500);
       }
-      
-      setSnackbarOpen(true);
       
     } catch (error) {
       setMessage({
@@ -234,22 +267,28 @@ const EditProductPage = () => {
       try {
         if (isLocalProduct) {
           // Удаляем локальный продукт
-          deleteLocalProduct(id);
+          const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+          const updatedProducts = localProducts.filter(p => p.id !== id);
+          localStorage.setItem('local_products', JSON.stringify(updatedProducts));
+          
           setMessage({
             type: 'success',
-            text: 'Local product deleted!'
+            text: 'Product deleted successfully!'
           });
+          
+          setSnackbarOpen(true);
+          setTimeout(() => navigate('/products'), 1000);
+          
         } else {
-          // Удаляем через API
-          // Здесь нужна мутация delete, но пока используем обновление
+          // Удаляем через API (симуляция)
           setMessage({
             type: 'success',
             text: 'Product deletion simulated'
           });
+          
+          setSnackbarOpen(true);
+          setTimeout(() => navigate('/products'), 1000);
         }
-        
-        setSnackbarOpen(true);
-        setTimeout(() => navigate('/products'), 1000);
         
       } catch (error) {
         setMessage({
@@ -416,6 +455,16 @@ const EditProductPage = () => {
             onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
             margin="normal"
             inputProps={{ min: 0, max: 5, step: 0.1 }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Image URL (Optional)"
+            value={formData.thumbnail}
+            onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+            margin="normal"
+            placeholder="https://example.com/image.jpg"
+            helperText="Leave empty for default placeholder"
           />
           
           <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
