@@ -13,12 +13,16 @@ import {
   InputLabel,
   Button,
   Paper,
-  Chip
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { useGetCategoriesQuery } from '../../api/productsApi';
-import { useProducts } from '../../hooks/useProducts'; // ← Импортируйте новый хук
+import CloudIcon from '@mui/icons-material/Cloud';
+import StorageIcon from '@mui/icons-material/Storage';
+import AllInboxIcon from '@mui/icons-material/AllInbox';
+import { useGetProductsQuery, useGetCategoriesQuery } from '../../api/productsApi';
 import ProductCard from './ProductCard';
 
 const ProductList = () => {
@@ -28,9 +32,38 @@ const ProductList = () => {
   const [category, setCategory] = useState('');
   const [sortBy, setSortBy] = useState('title');
   const [order, setOrder] = useState('asc');
+  const [productType, setProductType] = useState('all'); // 'all', 'api', 'local'
+  const [localProducts, setLocalProducts] = useState([]);
   
   const limit = 9;
   
+  // Загружаем локальные продукты
+  useEffect(() => {
+    const loadLocalProducts = () => {
+      try {
+        const storedProducts = localStorage.getItem('local_products');
+        if (storedProducts) {
+          const parsed = JSON.parse(storedProducts);
+          setLocalProducts(parsed);
+        }
+      } catch (error) {
+        console.error('Error loading local products:', error);
+      }
+    };
+    
+    loadLocalProducts();
+    
+    // Слушаем изменения localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === 'local_products') {
+        loadLocalProducts();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Дебаунс поиска
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -41,26 +74,83 @@ const ProductList = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Используем кастомный хук
-  const { 
-    data, 
-    isLoading, 
-    error, 
-    hasLocalProducts,
-    localProductsCount,
-    refetch 
-  } = useProducts({
-    limit,
-    skip: (page - 1) * limit,
+  // Запрос API продуктов
+  const { data: apiData, isLoading, error, refetch } = useGetProductsQuery({
+    limit: 100, // Берем много, чтобы фильтровать локально
+    skip: 0,
     search: debouncedSearch,
-    category,
+    category: productType === 'api' ? category : '', // Для API учитываем категорию
     sortBy,
-    order,
-    enableLocalProducts: true
+    order
   });
 
   // Запрос категорий
   const { data: categoriesData } = useGetCategoriesQuery();
+
+  // Функция фильтрации и объединения продуктов
+  const getFilteredProducts = () => {
+    let allProducts = [];
+    
+    // Добавляем API продукты
+    if (apiData?.products) {
+      const apiProducts = apiData.products.map(product => ({
+        ...product,
+        source: 'api',
+        isLocal: false
+      }));
+      allProducts = [...allProducts, ...apiProducts];
+    }
+    
+    // Добавляем локальные продукты
+    if (localProducts.length > 0) {
+      const filteredLocal = localProducts.filter(product => {
+        // Фильтрация по поиску для локальных
+        if (searchTerm && !product.title?.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            !product.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        // Фильтрация по категории для локальных
+        if (category && product.category !== category) {
+          return false;
+        }
+        return true;
+      });
+      
+      const localWithSource = filteredLocal.map(product => ({
+        ...product,
+        source: 'local',
+        isLocal: true
+      }));
+      
+      allProducts = [...allProducts, ...localWithSource];
+    }
+    
+    // Применяем фильтр по типу
+    if (productType === 'api') {
+      allProducts = allProducts.filter(p => p.source === 'api');
+    } else if (productType === 'local') {
+      allProducts = allProducts.filter(p => p.source === 'local');
+    }
+    
+    // Сортировка
+    allProducts.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+      
+      if (sortBy === 'title') {
+        aValue = aValue?.toLowerCase() || '';
+        bValue = bValue?.toLowerCase() || '';
+      }
+      
+      if (order === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+    
+    return allProducts;
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -74,13 +164,25 @@ const ProductList = () => {
     setCategory('');
     setSortBy('title');
     setOrder('asc');
+    setProductType('all');
     setPage(1);
   };
 
-  const handleSortChange = (newSortBy, newOrder) => {
-    setSortBy(newSortBy);
-    setOrder(newOrder);
-    setPage(1);
+  const handleRefresh = () => {
+    refetch();
+    const storedProducts = localStorage.getItem('local_products');
+    if (storedProducts) {
+      setLocalProducts(JSON.parse(storedProducts));
+    }
+  };
+
+  const handleClearLocalProducts = () => {
+    if (window.confirm('Delete all local products?')) {
+      localStorage.removeItem('local_products');
+      setLocalProducts([]);
+      alert('Local products cleared!');
+      setTimeout(() => window.location.reload(), 500);
+    }
   };
 
   if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 4 }} />;
@@ -89,22 +191,68 @@ const ProductList = () => {
     return <Alert severity="error">Error loading products: {error.message}</Alert>;
   }
 
-  const totalPages = Math.ceil((data?.total || 0) / limit);
-  const hasFilters = searchTerm || category || sortBy !== 'title' || order !== 'asc';
+  const allProducts = getFilteredProducts();
+  const totalProducts = allProducts.length;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedProducts = allProducts.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(totalProducts / limit);
+
+  const apiCount = apiData?.products?.length || 0;
+  const localCount = localProducts.length;
+  const hasFilters = searchTerm || category || sortBy !== 'title' || order !== 'asc' || productType !== 'all';
 
   return (
     <Box>
-      {/* Информация о локальных продуктах */}
-      {hasLocalProducts && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Showing {localProductsCount} locally saved product(s). 
-          These won't be saved on DummyJSON server but will persist in your browser.
-        </Alert>
-      )}
+      {/* Статистика */}
+      <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Chip 
+              icon={<CloudIcon />} 
+              label={`API: ${apiCount}`} 
+              color="primary" 
+              variant={productType === 'api' ? 'filled' : 'outlined'}
+            />
+            <Chip 
+              icon={<StorageIcon />} 
+              label={`Local: ${localCount}`} 
+              color="warning" 
+              variant={productType === 'local' ? 'filled' : 'outlined'}
+            />
+            <Chip 
+              icon={<AllInboxIcon />} 
+              label={`Total: ${totalProducts}`} 
+              color="success" 
+              variant="outlined"
+            />
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleRefresh}
+            >
+              Refresh
+            </Button>
+            {localCount > 0 && (
+              <Button
+                variant="outlined"
+                color="warning"
+                size="small"
+                onClick={handleClearLocalProducts}
+              >
+                Clear Local
+              </Button>
+            )}
+          </Box>
+        </Box>
+      </Paper>
 
-      {/* Панель поиска */}
+      {/* Панель фильтров */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Box component="form" onSubmit={handleSearchSubmit} sx={{ mb: 3 }}>
+        <Box component="form" onSubmit={handleSearchSubmit}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
               <TextField
@@ -187,67 +335,80 @@ const ProductList = () => {
               </Button>
             </Grid>
           </Grid>
-        </Box>
-        
-        {/* Информация */}
-        {hasFilters && (
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Showing {data?.products?.length || 0} of {data?.total || 0} products
-                {debouncedSearch && ` for "${debouncedSearch}"`}
-                {category && ` in ${category}`}
-                {hasLocalProducts && ` (${localProductsCount} local)`}
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<FilterListIcon />}
-                onClick={handleClearFilters}
-                size="small"
-              >
-                Clear Filters
-              </Button>
-              
-              <Button
-                variant="outlined"
-                onClick={refetch}
-                size="small"
-              >
-                Refresh
-              </Button>
-            </Box>
+          
+          {/* Фильтр по типу продукта */}
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Filter by Source:
+            </Typography>
+            <ToggleButtonGroup
+              value={productType}
+              exclusive
+              onChange={(e, newValue) => {
+                if (newValue !== null) {
+                  setProductType(newValue);
+                  setPage(1);
+                }
+              }}
+              aria-label="product source filter"
+              size="small"
+              fullWidth
+            >
+              <ToggleButton value="all" aria-label="all products">
+                <AllInboxIcon sx={{ mr: 1 }} />
+                All Products
+              </ToggleButton>
+              <ToggleButton value="api" aria-label="api products">
+                <CloudIcon sx={{ mr: 1 }} />
+                DummyJSON API
+              </ToggleButton>
+              <ToggleButton value="local" aria-label="local products">
+                <StorageIcon sx={{ mr: 1 }} />
+                Local Products
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Box>
-        )}
+          
+          {/* Информация о фильтрах */}
+          {hasFilters && (
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Showing {paginatedProducts.length} of {totalProducts} products
+                  {searchTerm && ` for "${searchTerm}"`}
+                  {category && ` in ${category}`}
+                  {productType === 'api' && ' (API only)'}
+                  {productType === 'local' && ' (Local only)'}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterListIcon />}
+                  onClick={handleClearFilters}
+                  size="small"
+                >
+                  Clear Filters
+                </Button>
+              </Box>
+            </Box>
+          )}
+        </Box>
       </Paper>
 
       {/* Результаты */}
-      {data?.products?.length === 0 ? (
+      {paginatedProducts.length === 0 ? (
         <Alert severity="info" sx={{ mb: 3 }}>
-          No products found. Try a different search term or category.
+          No products found. {productType === 'local' && localCount === 0 && 'You have no local products.'}
+          Try changing filters or search term.
         </Alert>
       ) : (
         <>
           <Grid container spacing={3}>
-            {data?.products?.map((product) => (
+            {paginatedProducts.map((product) => (
               <Grid item xs={12} sm={6} md={4} key={product.id}>
-                <ProductCard 
-                  product={product} 
-                  onDelete={() => {
-                    // После удаления обновляем список
-                    setTimeout(() => refetch(), 100);
-                  }}
-                />
-                {product.isLocal && (
-                  <Chip 
-                    label="Local" 
-                    size="small" 
-                    color="warning" 
-                    sx={{ position: 'absolute', top: 8, left: 8 }}
-                  />
-                )}
+                <ProductCard product={product} />
               </Grid>
             ))}
           </Grid>

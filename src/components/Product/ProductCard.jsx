@@ -17,7 +17,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../../features/auth/authSlice';
 import { useDeleteProductMutation } from '../../api/productsApi';
 
-// Альтернативно, можно использовать этот URL (работающий placeholder):
 const PLACEHOLDER_IMAGE = 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=No+Image';
 
 const ProductCard = ({ product, onDelete }) => {
@@ -50,10 +49,13 @@ const ProductCard = ({ product, onDelete }) => {
           localStorage.setItem('local_products', JSON.stringify(updatedProducts));
         }
         
-        // Вызываем колбэк для обновления UI
-        if (onDelete) {
-          onDelete();
-        }
+        // Показываем сообщение об успехе
+        alert(`Product "${product.title}" deleted successfully!`);
+        
+        // ОБНОВЛЯЕМ СТРАНИЦУ через 500ms
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
         
       } catch (error) {
         console.error('Delete error:', error);
@@ -70,7 +72,6 @@ const ProductCard = ({ product, onDelete }) => {
     if (product.image && product.image.startsWith('http')) {
       return product.image;
     }
-    // Используем рабочий placeholder
     return PLACEHOLDER_IMAGE;
   };
 
@@ -86,6 +87,44 @@ const ProductCard = ({ product, onDelete }) => {
         boxShadow: 6
       }
     }}>
+      {/* Маркер типа продукта */}
+      <Box sx={{ 
+        position: 'absolute', 
+        top: 8, 
+        left: 8, 
+        zIndex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5
+      }}>
+        {isLocalProduct && !isEditedApiProduct && (
+          <Chip 
+            label="Local" 
+            size="small" 
+            color="warning" 
+            sx={{ fontSize: '0.6rem', height: '20px' }}
+          />
+        )}
+        
+        {isEditedApiProduct && (
+          <Chip 
+            label="Edited API" 
+            size="small" 
+            color="info" 
+            sx={{ fontSize: '0.6rem', height: '20px' }}
+          />
+        )}
+        
+        {product.originalApiId && (
+          <Chip 
+            label={`API: #${product.originalApiId}`}
+            size="small" 
+            variant="outlined"
+            sx={{ fontSize: '0.5rem', height: '16px' }}
+          />
+        )}
+      </Box>
+      
       {isAdmin && (
         <Box sx={{ 
           position: 'absolute', 
@@ -124,44 +163,6 @@ const ProductCard = ({ product, onDelete }) => {
         </Box>
       )}
       
-      {/* Маркер типа продукта */}
-      <Box sx={{ 
-        position: 'absolute', 
-        top: 8, 
-        left: 8, 
-        zIndex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.5
-      }}>
-        {isLocalProduct && !isEditedApiProduct && (
-          <Chip 
-            label="Local" 
-            size="small" 
-            color="warning" 
-            sx={{ fontSize: '0.6rem', height: '20px' }}
-          />
-        )}
-        
-        {isEditedApiProduct && (
-          <Chip 
-            label="Edited API" 
-            size="small" 
-            color="info" 
-            sx={{ fontSize: '0.6rem', height: '20px' }}
-          />
-        )}
-        
-        {product.originalApiId && (
-          <Chip 
-            label={`Original: #${product.originalApiId}`}
-            size="small" 
-            variant="outlined"
-            sx={{ fontSize: '0.5rem', height: '16px' }}
-          />
-        )}
-      </Box>
-      
       <CardMedia
         component="img"
         height="200"
@@ -169,7 +170,6 @@ const ProductCard = ({ product, onDelete }) => {
         alt={product.title}
         sx={{ objectFit: 'cover' }}
         onError={(e) => {
-          // Если изображение не загрузилось, заменяем на placeholder
           e.target.src = PLACEHOLDER_IMAGE;
         }}
       />
@@ -217,19 +217,12 @@ const ProductCard = ({ product, onDelete }) => {
           </Typography>
         </Box>
         
-        {/* Дополнительная информация для отредактированных API продуктов */}
         {isEditedApiProduct && (
           <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed #e0e0e0' }}>
             <Typography variant="caption" color="text.secondary">
-              📝 Edited locally from API product
+              📝 Edited from API
             </Typography>
           </Box>
-        )}
-        
-        {product.createdAt && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-            Created: {new Date(product.createdAt).toLocaleDateString()}
-          </Typography>
         )}
       </CardContent>
       
