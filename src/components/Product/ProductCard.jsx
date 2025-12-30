@@ -16,30 +16,48 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../../features/auth/authSlice';
 import { useDeleteProductMutation } from '../../api/productsApi';
-import { deleteProduct } from '../../utils/productUtils';
-
-// Локальная заглушка для изображения (Base64 или локальный путь)
-const DEFAULT_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiNFRUVFRUUiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5OTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+Cjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNDQ0NDQ0MiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9kdWN0IFByZXZpZXc8L3RleHQ+Cjwvc3ZnPgo=';
 
 // Альтернативно, можно использовать этот URL (работающий placeholder):
 const PLACEHOLDER_IMAGE = 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=No+Image';
 
-const ProductCard = ({ product, onEdit, onDelete }) => {
+const ProductCard = ({ product, onDelete }) => {
   const isAdmin = useSelector(selectIsAdmin);
   const [deleteApiProduct] = useDeleteProductMutation();
 
+  // Проверяем тип продукта
+  const isLocalProduct = product.id && product.id.toString().startsWith('local_');
+  const isEditedApiProduct = product.isEditedApiProduct;
+
   const handleDelete = async () => {
     if (window.confirm(`Delete "${product.title}"?`)) {
-      const result = await deleteProduct(
-        product.id, 
-        deleteApiProduct,
-        () => {
-          if (onDelete) onDelete();
+      try {
+        if (isLocalProduct) {
+          // Удаляем локальный продукт из localStorage
+          const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+          const updatedProducts = localProducts.filter(p => p.id !== product.id);
+          localStorage.setItem('local_products', JSON.stringify(updatedProducts));
+          
+          console.log('Local product deleted:', product.id);
+        } else {
+          // Удаляем через API (симуляция)
+          await deleteApiProduct(product.id).unwrap();
+          
+          // Также удаляем локальную копию если есть
+          const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
+          const updatedProducts = localProducts.filter(p => 
+            !(p.originalApiId === product.id || p.id === `local_${product.id}`)
+          );
+          localStorage.setItem('local_products', JSON.stringify(updatedProducts));
         }
-      );
-      
-      if (!result.success) {
-        alert('Failed to delete product');
+        
+        // Вызываем колбэк для обновления UI
+        if (onDelete) {
+          onDelete();
+        }
+        
+      } catch (error) {
+        console.error('Delete error:', error);
+        alert('Failed to delete product. Please try again.');
       }
     }
   };
@@ -106,6 +124,44 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
         </Box>
       )}
       
+      {/* Маркер типа продукта */}
+      <Box sx={{ 
+        position: 'absolute', 
+        top: 8, 
+        left: 8, 
+        zIndex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5
+      }}>
+        {isLocalProduct && !isEditedApiProduct && (
+          <Chip 
+            label="Local" 
+            size="small" 
+            color="warning" 
+            sx={{ fontSize: '0.6rem', height: '20px' }}
+          />
+        )}
+        
+        {isEditedApiProduct && (
+          <Chip 
+            label="Edited API" 
+            size="small" 
+            color="info" 
+            sx={{ fontSize: '0.6rem', height: '20px' }}
+          />
+        )}
+        
+        {product.originalApiId && (
+          <Chip 
+            label={`Original: #${product.originalApiId}`}
+            size="small" 
+            variant="outlined"
+            sx={{ fontSize: '0.5rem', height: '16px' }}
+          />
+        )}
+      </Box>
+      
       <CardMedia
         component="img"
         height="200"
@@ -160,6 +216,21 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
             Stock: {product.stock || 0}
           </Typography>
         </Box>
+        
+        {/* Дополнительная информация для отредактированных API продуктов */}
+        {isEditedApiProduct && (
+          <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed #e0e0e0' }}>
+            <Typography variant="caption" color="text.secondary">
+              📝 Edited locally from API product
+            </Typography>
+          </Box>
+        )}
+        
+        {product.createdAt && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Created: {new Date(product.createdAt).toLocaleDateString()}
+          </Typography>
+        )}
       </CardContent>
       
       <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
