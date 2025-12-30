@@ -149,13 +149,6 @@ const LoginForm = () => {
           </Button>
         </Box>
       </Box>
-      
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Note:</strong> Check browser console (F12) for login details.
-          DummyJSON requires exact usernames/passwords.
-        </Typography>
-      </Box>
     </Box>
   );
 };
