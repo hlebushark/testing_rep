@@ -94,12 +94,12 @@ const Header = () => {
         thumbnail: 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=New+Product'
       };
 
-      // Проверяем обязательные поля
+      // Check required
       if (!productData.title || !productData.description || !productData.category || productData.price <= 0) {
         throw new Error('Please fill all required fields with valid data');
       }
 
-      // 1. Сначала создаем локальный продукт
+      // Create local product
       const localProductId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localProduct = {
         ...productData,
@@ -109,12 +109,12 @@ const Header = () => {
         createdAt: new Date().toISOString()
       };
 
-      // Сохраняем в localStorage
+      // Save to localStorage
       const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
       localProducts.unshift(localProduct);
       localStorage.setItem('local_products', JSON.stringify(localProducts));
 
-      // 2. Пытаемся создать через API (симуляция)
+      // Try to create using API (simulation)
       try {
         await createProduct(productData).unwrap();
         console.log('API product creation simulated');
@@ -122,7 +122,6 @@ const Header = () => {
         console.log('API simulation failed, but local product created');
       }
 
-      // 3. Показываем успешное сообщение
       setSnackbar({
         open: true,
         message: '✅ Product created successfully!',
@@ -130,7 +129,6 @@ const Header = () => {
         productId: localProductId
       });
       
-      // 4. Закрываем диалог и сбрасываем форму
       setCreateDialogOpen(false);
       setNewProduct({
         title: '',
@@ -141,7 +139,7 @@ const Header = () => {
         brand: ''
       });
       
-      // 5. Отправляем событие для обновления списка продуктов
+      // Event to update products list
       window.dispatchEvent(new Event('localProductsUpdated'));
       
     } catch (error) {
@@ -226,7 +224,7 @@ const Header = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Диалог создания продукта */}
+      {/* Create product dialogue */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Create New Product</DialogTitle>
         <DialogContent>
@@ -315,7 +313,7 @@ const Header = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Снэкбар уведомлений */}
+      {/* Notification snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

@@ -1,8 +1,8 @@
-// Локальное хранилище для продуктов (симуляция БД)
+// Local storage (DB simulation)
 
 const LOCAL_STORAGE_KEY = 'local_products';
 
-// Получить локальные продукты
+// Get local products
 export const getLocalProducts = () => {
   try {
     const localProducts = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -13,19 +13,16 @@ export const getLocalProducts = () => {
   }
 };
 
-// Сохранить локальные продукты
+// Save local products
 export const saveLocalProduct = (product) => {
   try {
     const localProducts = getLocalProducts();
     
-    // Проверяем, есть ли уже продукт с таким ID
     const existingIndex = localProducts.findIndex(p => p.id === product.id);
     
     if (existingIndex >= 0) {
-      // Обновляем существующий
       localProducts[existingIndex] = product;
     } else {
-      // Добавляем новый
       localProducts.push(product);
     }
     
@@ -37,7 +34,7 @@ export const saveLocalProduct = (product) => {
   }
 };
 
-// Удалить локальный продукт
+// Delete local product
 export const deleteLocalProduct = (id) => {
   try {
     let localProducts = getLocalProducts();
@@ -56,17 +53,17 @@ export const deleteLocalProduct = (id) => {
   }
 };
 
-// Очистить все локальные продукты
+// Clear all
 export const clearLocalProducts = () => {
   localStorage.removeItem(LOCAL_STORAGE_KEY);
 };
 
-// Генератор ID для локальных продуктов
+// ID generator
 export const generateLocalId = () => {
   return `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-// Пометить продукт как локальный
+// Mark as local
 export const markAsLocal = (product) => ({
   ...product,
   isLocal: true,

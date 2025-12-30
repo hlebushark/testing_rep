@@ -53,8 +53,7 @@ export const productsApi = createApi({
               { type: 'Product', id: 'LIST' },
             ]
           : [{ type: 'Product', id: 'LIST' }],
-      // Сохраняем данные в кеше дольше
-      keepUnusedDataFor: 60, // 60 секунд вместо 30 по умолчанию
+      keepUnusedDataFor: 60,
     }),
     
     getProduct: builder.query({
@@ -66,7 +65,7 @@ export const productsApi = createApi({
       query: () => 'products/categories'
     }),
     
-    // СОЗДАНИЕ с оптимистичным обновлением
+    // CREATE
     createProduct: builder.mutation({
       query: (newProduct) => ({
         url: 'products/add',
@@ -76,16 +75,15 @@ export const productsApi = createApi({
           'Content-Type': 'application/json'
         }
       }),
-      // Оптимистичное обновление
+      // Update
       async onQueryStarted(newProduct, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
           productsApi.util.updateQueryData('getProducts', {}, (draft) => {
             if (draft?.products) {
-              // Добавляем продукт с временным ID
               draft.products.unshift({
                 ...newProduct,
-                id: Date.now(), // Временный ID
-                isLocal: true, // Флаг локального продукта
+                id: Date.now(), // temp ID
+                isLocal: true, 
               });
               draft.total += 1;
             }
@@ -94,7 +92,7 @@ export const productsApi = createApi({
         
         try {
           const { data } = await queryFulfilled;
-          // Обновляем с реальным ID от API
+          // Update with real ID from API
           dispatch(
             productsApi.util.updateQueryData('getProducts', {}, (draft) => {
               if (draft?.products) {
@@ -115,7 +113,7 @@ export const productsApi = createApi({
       invalidatesTags: [{ type: 'Product', id: 'LIST' }],
     }),
     
-    // ОБНОВЛЕНИЕ с оптимистичным обновлением
+    // UPDATE
     updateProduct: builder.mutation({
       query: ({ id, ...updates }) => ({
         url: `products/${id}`,
@@ -125,15 +123,12 @@ export const productsApi = createApi({
           'Content-Type': 'application/json'
         }
       }),
-      // Оптимистичное обновление
       async onQueryStarted({ id, ...updates }, { dispatch, queryFulfilled }) {
         const patchResult = dispatch(
           productsApi.util.updateQueryData('getProduct', id, (draft) => {
             Object.assign(draft, updates);
           })
         );
-        
-        // Также обновляем в списке
         dispatch(
           productsApi.util.updateQueryData('getProducts', {}, (draft) => {
             if (draft?.products) {
@@ -154,17 +149,15 @@ export const productsApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'Product', id }],
     }),
     
-    // УДАЛЕНИЕ с оптимистичным обновлением
+    // DELETE
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `products/${id}`,
         method: 'DELETE'
       }),
-      // Оптимистичное удаление
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
         let deletedProduct = null;
         
-        // Сохраняем удаляемый продукт
         dispatch(
           productsApi.util.updateQueryData('getProducts', {}, (draft) => {
             if (draft?.products) {
@@ -181,7 +174,7 @@ export const productsApi = createApi({
         try {
           await queryFulfilled;
         } catch {
-          // Если ошибка - восстанавливаем
+          // Recover if error
           if (deletedProduct) {
             dispatch(
               productsApi.util.updateQueryData('getProducts', {}, (draft) => {

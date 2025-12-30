@@ -23,7 +23,7 @@ const ProductCard = ({ product, onDelete }) => {
   const isAdmin = useSelector(selectIsAdmin);
   const [deleteApiProduct] = useDeleteProductMutation();
 
-  // Проверяем тип продукта
+  // Check product type
   const isLocalProduct = product.id && product.id.toString().startsWith('local_');
   const isEditedApiProduct = product.isEditedApiProduct;
 
@@ -31,17 +31,17 @@ const ProductCard = ({ product, onDelete }) => {
     if (window.confirm(`Delete "${product.title}"?`)) {
       try {
         if (isLocalProduct) {
-          // Удаляем локальный продукт из localStorage
+          // delete local product from localStorage
           const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
           const updatedProducts = localProducts.filter(p => p.id !== product.id);
           localStorage.setItem('local_products', JSON.stringify(updatedProducts));
           
           console.log('Local product deleted:', product.id);
         } else {
-          // Удаляем через API (симуляция)
+          // Delete from API (simulation)
           await deleteApiProduct(product.id).unwrap();
           
-          // Также удаляем локальную копию если есть
+          // Delete local copy
           const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
           const updatedProducts = localProducts.filter(p => 
             !(p.originalApiId === product.id || p.id === `local_${product.id}`)
@@ -49,10 +49,8 @@ const ProductCard = ({ product, onDelete }) => {
           localStorage.setItem('local_products', JSON.stringify(updatedProducts));
         }
         
-        // Показываем сообщение об успехе
         alert(`Product "${product.title}" deleted successfully!`);
         
-        // ОБНОВЛЯЕМ СТРАНИЦУ через 500ms
         setTimeout(() => {
           window.location.reload();
         }, 500);
@@ -64,7 +62,6 @@ const ProductCard = ({ product, onDelete }) => {
     }
   };
 
-  // Функция для безопасного получения изображения
   const getProductImage = () => {
     if (product.thumbnail && product.thumbnail.startsWith('http')) {
       return product.thumbnail;
@@ -87,7 +84,7 @@ const ProductCard = ({ product, onDelete }) => {
         boxShadow: 6
       }
     }}>
-      {/* Маркер типа продукта */}
+      {/* Product type marker */}
       <Box sx={{ 
         position: 'absolute', 
         top: 8, 

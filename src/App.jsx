@@ -5,28 +5,28 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-import EditProductPage from './pages/EditProductPage'; // ← ДОБАВЬТЕ ЭТОТ ИМПОРТ!
+import EditProductPage from './pages/EditProductPage';
 import ProtectedRoute from './components/Layout/ProtectedRoute';
 
 function App() {
   return (
     <Routes>
-      {/* Публичные маршруты */}
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       
-      {/* Защищенные маршруты */}
+      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Layout />}>
           <Route index element={<ProductsPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="products/:id/edit" element={<EditProductPage />} />
-          <Route path="products/new" element={<EditProductPage />} /> {/* Для создания */}
+          <Route path="products/new" element={<EditProductPage />} />
         </Route>
       </Route>
       
-      {/* 404 страница */}
+      {/* 404 page */}
       <Route path="*" element={<div>404 - Page Not Found</div>} />
     </Routes>
   );

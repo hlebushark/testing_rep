@@ -37,7 +37,7 @@ const ProductList = () => {
   
   const limit = 9;
   
-  // Загружаем локальные продукты
+  // Load local products
   useEffect(() => {
     const loadLocalProducts = () => {
       try {
@@ -53,7 +53,6 @@ const ProductList = () => {
     
     loadLocalProducts();
     
-    // Слушаем изменения localStorage
     const handleStorageChange = (e) => {
       if (e.key === 'local_products') {
         loadLocalProducts();
@@ -64,7 +63,7 @@ const ProductList = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Дебаунс поиска
+  // Search debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -74,24 +73,22 @@ const ProductList = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Запрос API продуктов
+  // Products Query
   const { data: apiData, isLoading, error, refetch } = useGetProductsQuery({
-    limit: 100, // Берем много, чтобы фильтровать локально
+    limit: 100, 
     skip: 0,
     search: debouncedSearch,
-    category: productType === 'api' ? category : '', // Для API учитываем категорию
+    category: productType === 'api' ? category : '', 
     sortBy,
     order
   });
 
-  // Запрос категорий
   const { data: categoriesData } = useGetCategoriesQuery();
 
-  // Функция фильтрации и объединения продуктов
+  // Filter
   const getFilteredProducts = () => {
     let allProducts = [];
     
-    // Добавляем API продукты
     if (apiData?.products) {
       const apiProducts = apiData.products.map(product => ({
         ...product,
@@ -101,15 +98,13 @@ const ProductList = () => {
       allProducts = [...allProducts, ...apiProducts];
     }
     
-    // Добавляем локальные продукты
     if (localProducts.length > 0) {
       const filteredLocal = localProducts.filter(product => {
-        // Фильтрация по поиску для локальных
+        // Find local
         if (searchTerm && !product.title?.toLowerCase().includes(searchTerm.toLowerCase()) && 
             !product.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
           return false;
         }
-        // Фильтрация по категории для локальных
         if (category && product.category !== category) {
           return false;
         }
@@ -125,14 +120,14 @@ const ProductList = () => {
       allProducts = [...allProducts, ...localWithSource];
     }
     
-    // Применяем фильтр по типу
+    // Type filter
     if (productType === 'api') {
       allProducts = allProducts.filter(p => p.source === 'api');
     } else if (productType === 'local') {
       allProducts = allProducts.filter(p => p.source === 'local');
     }
     
-    // Сортировка
+    // Sort
     allProducts.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
@@ -204,7 +199,7 @@ const ProductList = () => {
 
   return (
     <Box>
-      {/* Статистика */}
+      {/* Statistics */}
       <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -250,7 +245,7 @@ const ProductList = () => {
         </Box>
       </Paper>
 
-      {/* Панель фильтров */}
+      {/* Filter panel */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
         <Box component="form" onSubmit={handleSearchSubmit}>
           <Grid container spacing={2} alignItems="center">
@@ -336,7 +331,7 @@ const ProductList = () => {
             </Grid>
           </Grid>
           
-          {/* Фильтр по типу продукта */}
+          {/* Product type filter */}
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle2" gutterBottom>
               Filter by Source:
@@ -369,7 +364,6 @@ const ProductList = () => {
             </ToggleButtonGroup>
           </Box>
           
-          {/* Информация о фильтрах */}
           {hasFilters && (
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
               <Box>
@@ -397,7 +391,7 @@ const ProductList = () => {
         </Box>
       </Paper>
 
-      {/* Результаты */}
+      {/* Results */}
       {paginatedProducts.length === 0 ? (
         <Alert severity="info" sx={{ mb: 3 }}>
           No products found. {productType === 'local' && localCount === 0 && 'You have no local products.'}
@@ -413,7 +407,7 @@ const ProductList = () => {
             ))}
           </Grid>
           
-          {/* Пагинация */}
+          {/* Pagination */}
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination

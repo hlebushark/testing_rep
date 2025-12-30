@@ -85,12 +85,12 @@ const ProductsPage = () => {
         thumbnail: 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=New+Product'
       };
 
-      // Проверяем обязательные поля
+      // Check required
       if (!productData.title || !productData.description || !productData.category || productData.price <= 0) {
         throw new Error('Please fill all required fields with valid data');
       }
 
-      // 1. Сначала создаем локальный продукт
+      // Create local product
       const localProductId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localProduct = {
         ...productData,
@@ -100,12 +100,12 @@ const ProductsPage = () => {
         createdAt: new Date().toISOString()
       };
 
-      // Сохраняем в localStorage
+      // Save to localStorage
       const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
       localProducts.unshift(localProduct);
       localStorage.setItem('local_products', JSON.stringify(localProducts));
 
-      // 2. Пытаемся создать через API (симуляция)
+      // Try to create with API (simulation)
       try {
         await createProduct(productData).unwrap();
         console.log('API product creation simulated');
@@ -113,7 +113,6 @@ const ProductsPage = () => {
         console.log('API simulation failed, but local product created');
       }
 
-      // 3. Показываем успешное сообщение
       setSnackbar({
         open: true,
         message: '✅ Product created successfully!',
@@ -121,7 +120,6 @@ const ProductsPage = () => {
         productId: localProductId
       });
       
-      // 4. Закрываем диалог и сбрасываем форму
       setCreateDialogOpen(false);
       setNewProduct({
         title: '',
@@ -132,7 +130,6 @@ const ProductsPage = () => {
         brand: ''
       });
       
-      // 5. Отправляем событие для обновления списка продуктов
       window.dispatchEvent(new Event('localProductsUpdated'));
       
     } catch (error) {
@@ -162,7 +159,7 @@ const ProductsPage = () => {
 
   return (
     <Box>
-      {/* Заголовок и кнопки */}
+      {/* Header and buttons */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4">
@@ -190,10 +187,10 @@ const ProductsPage = () => {
         )}
       </Paper>
 
-      {/* Список продуктов */}
+      {/* Product list*/}
       <ProductList />
 
-      {/* Диалог создания продукта */}
+      {/* Create product dialogue */}
       <Dialog 
         open={createDialogOpen} 
         onClose={() => !isCreating && setCreateDialogOpen(false)}
@@ -301,7 +298,7 @@ const ProductsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Снэкбар уведомлений */}
+      {/* Notification snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
