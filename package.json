@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "webpack serve --mode development",
+    "start": "webpack serve --mode development --open",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx"
+    "deploy": "npm run build && gh-pages -d dist"
   },
+  "homepage": "https://hlebushark.github.io/testing_rep/",
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
