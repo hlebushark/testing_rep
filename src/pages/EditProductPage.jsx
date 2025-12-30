@@ -99,11 +99,31 @@ const EditProductPage = () => {
   }
 
   const categories = [
-    'smartphones', 'laptops', 'fragrances', 'skincare', 'groceries',
-    'home-decoration', 'furniture', 'tops', 'womens-dresses', 'womens-shoes',
-    'mens-shirts', 'mens-shoes', 'mens-watches', 'womens-watches',
-    'womens-bags', 'womens-jewellery', 'sunglasses', 'automotive', 'motorcycle'
-  ];
+  'beauty',
+  'fragrances', 
+  'furniture',
+  'groceries',
+  'home-decoration',
+  'kitchen-accessories',
+  'laptops',
+  'mens-shirts',
+  'mens-shoes',
+  'mens-watches',
+  'mobile-accessories',
+  'motorcycle',
+  'skin-care',
+  'smartphones',
+  'sports-accessories',
+  'sunglasses',
+  'tablets',
+  'tops',
+  'vehicle',
+  'womens-bags',
+  'womens-dresses',
+  'womens-jewellery',
+  'womens-shoes',
+  'womens-watches'
+];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
