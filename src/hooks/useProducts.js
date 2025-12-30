@@ -1,0 +1,196 @@
+import { useState, useEffect } from 'react';
+import { 
+  useGetProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation
+} from '../api/productsApi';
+import {
+  getLocalProducts,
+  saveLocalProduct,
+  deleteLocalProduct,
+  generateLocalId
+} from '../utils/localProductsStore';
+
+export const useProducts = (options = {}) => {
+  const {
+    limit = 10,
+    skip = 0,
+    search = '',
+    category = '',
+    sortBy = 'title',
+    order = 'asc',
+    enableLocalProducts = true
+  } = options;
+
+  // RTK Query запрос
+  const {
+    data: apiData,
+    isLoading: apiLoading,
+    error: apiError,
+    refetch
+  } = useGetProductsQuery({
+    limit,
+    skip,
+    search,
+    category,
+    sortBy,
+    order
+  });
+
+  // Мутации
+  const [createApiProduct, { isLoading: creatingApi }] = useCreateProductMutation();
+  const [updateApiProduct, { isLoading: updatingApi }] = useUpdateProductMutation();
+  const [deleteApiProduct, { isLoading: deletingApi }] = useDeleteProductMutation();
+
+  // Локальные продукты
+  const [localProducts, setLocalProducts] = useState([]);
+  const [combinedData, setCombinedData] = useState(null);
+
+  // Загрузка локальных продуктов
+  useEffect(() => {
+    if (enableLocalProducts) {
+      setLocalProducts(getLocalProducts());
+    }
+  }, [enableLocalProducts]);
+
+  // Объединение данных API и локальных
+  useEffect(() => {
+    if (apiData || localProducts.length > 0) {
+      let products = [...(apiData?.products || [])];
+      
+      // Добавляем локальные продукты
+      if (enableLocalProducts && localProducts.length > 0) {
+        const filteredLocal = localProducts.filter(product => {
+          // Фильтрация по поиску
+          if (search && !product.title.toLowerCase().includes(search.toLowerCase()) && 
+              !product.description.toLowerCase().includes(search.toLowerCase())) {
+            return false;
+          }
+          // Фильтрация по категории
+          if (category && product.category !== category) {
+            return false;
+          }
+          return true;
+        });
+        
+        products = [...filteredLocal, ...products];
+      }
+
+      // Сортировка
+      products.sort((a, b) => {
+        let aValue = a[sortBy];
+        let bValue = b[sortBy];
+        
+        if (sortBy === 'title') {
+          aValue = aValue?.toLowerCase() || '';
+          bValue = bValue?.toLowerCase() || '';
+        }
+        
+        if (order === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+
+      // Пагинация
+      const paginatedProducts = products.slice(skip, skip + limit);
+      
+      setCombinedData({
+        products: paginatedProducts,
+        total: products.length,
+        skip,
+        limit,
+        hasLocalProducts: localProducts.length > 0
+      });
+    }
+  }, [apiData, localProducts, search, category, sortBy, order, skip, limit, enableLocalProducts]);
+
+  // Создание продукта
+  const createProduct = async (productData) => {
+    const newProduct = {
+      ...productData,
+      id: generateLocalId(),
+      isLocal: true,
+      createdAt: new Date().toISOString()
+    };
+
+    // Сохраняем локально
+    saveLocalProduct(newProduct);
+    setLocalProducts(prev => [...prev, newProduct]);
+
+    // Пытаемся отправить на API (симуляция)
+    try {
+      await createApiProduct(productData).unwrap();
+    } catch (error) {
+      console.log('API creation failed, keeping local copy:', error);
+    }
+
+    return newProduct;
+  };
+
+  // Обновление продукта
+  const updateProduct = async ({ id, ...updates }) => {
+    const isLocal = id.toString().startsWith('local_');
+    
+    if (isLocal) {
+      // Обновляем локальный
+      const updatedProduct = { 
+        ...localProducts.find(p => p.id === id), 
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+      
+      saveLocalProduct(updatedProduct);
+      setLocalProducts(prev => 
+        prev.map(p => p.id === id ? updatedProduct : p)
+      );
+      
+      return updatedProduct;
+    } else {
+      // Обновляем через API + локально
+      const apiProduct = apiData?.products?.find(p => p.id === id);
+      if (apiProduct) {
+        const updatedProduct = { ...apiProduct, ...updates };
+        saveLocalProduct({ ...updatedProduct, isLocal: false });
+      }
+      
+      await updateApiProduct({ id, ...updates }).unwrap();
+      await refetch();
+    }
+  };
+
+  // Удаление продукта
+  const deleteProduct = async (id) => {
+    const isLocal = id.toString().startsWith('local_');
+    
+    if (isLocal) {
+      // Удаляем локальный
+      deleteLocalProduct(id);
+      setLocalProducts(prev => prev.filter(p => p.id !== id));
+    } else {
+      // Удаляем через API
+      await deleteApiProduct(id).unwrap();
+      
+      // Также удаляем из локального кеша если есть
+      deleteLocalProduct(id);
+      await refetch();
+    }
+  };
+
+  return {
+    data: combinedData,
+    isLoading: apiLoading,
+    error: apiError,
+    isCreating: creatingApi,
+    isUpdating: updatingApi,
+    isDeleting: deletingApi,
+    hasLocalProducts: localProducts.length > 0,
+    localProductsCount: localProducts.length,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    refetch
+  };
+};

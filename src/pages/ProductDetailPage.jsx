@@ -22,6 +22,7 @@ const ProductDetailPage = () => {
   const isAdmin = useSelector(selectIsAdmin);
   const { data: product, isLoading, error } = useGetProductQuery(id);
   const [deleteProduct] = useDeleteProductMutation();
+  const PLACEHOLDER_IMAGE = 'https://placehold.co/400x400/FFFFFF/CCCCCC?text=Product+Image';
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -69,8 +70,12 @@ const ProductDetailPage = () => {
             <CardMedia
               component="img"
               height="400"
-              image={product.thumbnail || '/placeholder.jpg'}
+              image={product.thumbnail || PLACEHOLDER_IMAGE}
               alt={product.title}
+              sx={{ objectFit: 'contain', p: 2 }}
+              onError={(e) => {
+                e.target.src = PLACEHOLDER_IMAGE;
+              }}
             />
           </Card>
         </Grid>

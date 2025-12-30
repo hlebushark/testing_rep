@@ -16,20 +16,44 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../../features/auth/authSlice';
 import { useDeleteProductMutation } from '../../api/productsApi';
+import { deleteProduct } from '../../utils/productUtils';
+
+// Локальная заглушка для изображения (Base64 или локальный путь)
+const DEFAULT_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9IiNFRUVFRUUiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5OTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+Cjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNDQ0NDQ0MiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9kdWN0IFByZXZpZXc8L3RleHQ+Cjwvc3ZnPgo=';
+
+// Альтернативно, можно использовать этот URL (работающий placeholder):
+const PLACEHOLDER_IMAGE = 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=No+Image';
 
 const ProductCard = ({ product, onEdit, onDelete }) => {
   const isAdmin = useSelector(selectIsAdmin);
-  const [deleteProduct] = useDeleteProductMutation();
+  const [deleteApiProduct] = useDeleteProductMutation();
 
   const handleDelete = async () => {
-    if (window.confirm(`Delete "${product.title}"? This is only a simulation.`)) {
-      try {
-        await deleteProduct(product.id).unwrap();
-        if (onDelete) onDelete();
-      } catch (error) {
-        console.error('Delete error:', error);
+    if (window.confirm(`Delete "${product.title}"?`)) {
+      const result = await deleteProduct(
+        product.id, 
+        deleteApiProduct,
+        () => {
+          if (onDelete) onDelete();
+        }
+      );
+      
+      if (!result.success) {
+        alert('Failed to delete product');
       }
     }
+  };
+
+  // Функция для безопасного получения изображения
+  const getProductImage = () => {
+    if (product.thumbnail && product.thumbnail.startsWith('http')) {
+      return product.thumbnail;
+    }
+    if (product.image && product.image.startsWith('http')) {
+      return product.image;
+    }
+    // Используем рабочий placeholder
+    return PLACEHOLDER_IMAGE;
   };
 
   return (
@@ -56,7 +80,8 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
           <Tooltip title="Edit">
             <IconButton 
               size="small" 
-              onClick={() => onEdit && onEdit(product)}
+              component={Link}
+              to={`/products/${product.id}/edit`}
               sx={{ 
                 bgcolor: 'white',
                 '&:hover': { bgcolor: 'primary.light', color: 'white' }
@@ -84,9 +109,13 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
       <CardMedia
         component="img"
         height="200"
-        image={product.thumbnail || 'https://via.placeholder.com/300x200?text=No+Image'}
+        image={getProductImage()}
         alt={product.title}
         sx={{ objectFit: 'cover' }}
+        onError={(e) => {
+          // Если изображение не загрузилось, заменяем на placeholder
+          e.target.src = PLACEHOLDER_IMAGE;
+        }}
       />
       
       <CardContent sx={{ flexGrow: 1 }}>

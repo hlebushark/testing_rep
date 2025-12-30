@@ -19,6 +19,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { selectIsAdmin } from '../features/auth/authSlice';
 import ProductList from '../components/Product/ProductList';
 import { useCreateProductMutation } from '../api/productsApi';
+import { useProducts } from '../hooks/useProducts';
 
 const ProductsPage = () => {
   const isAdmin = useSelector(selectIsAdmin);
@@ -33,7 +34,7 @@ const ProductsPage = () => {
     brand: ''
   });
   
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const { createProduct, isCreating } = useProducts();
 
   const categories = [
   'beauty',
