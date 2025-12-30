@@ -1,80 +1,305 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   AppBar, 
   Toolbar, 
   Typography, 
   Button, 
   Box,
-  Chip 
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Snackbar,
+  Alert,
+  IconButton
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout, selectCurrentUser, selectIsAdmin } from '../../features/auth/authSlice';
+import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CreateIcon from '@mui/icons-material/Create';
+import { useProducts } from '../../hooks/useProducts';
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector(selectCurrentUser);
   const isAdmin = useSelector(selectIsAdmin);
+  
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [newProduct, setNewProduct] = useState({
+    title: '',
+    description: '',
+    price: '',
+    category: '',
+    stock: '',
+    brand: ''
+  });
+  
+  const { createProduct, isCreating } = useProducts();
+
+  const categories = [
+    'beauty',
+    'fragrances', 
+    'furniture',
+    'groceries',
+    'home-decoration',
+    'kitchen-accessories',
+    'laptops',
+    'mens-shirts',
+    'mens-shoes',
+    'mens-watches',
+    'mobile-accessories',
+    'motorcycle',
+    'skin-care',
+    'smartphones',
+    'sports-accessories',
+    'sunglasses',
+    'tablets',
+    'tops',
+    'vehicle',
+    'womens-bags',
+    'womens-dresses',
+    'womens-jewellery',
+    'womens-shoes',
+    'womens-watches'
+  ];
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
   };
 
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  const handleCreateProduct = async () => {
+    try {
+      const productData = {
+        title: newProduct.title,
+        description: newProduct.description,
+        price: parseFloat(newProduct.price),
+        category: newProduct.category,
+        stock: parseInt(newProduct.stock),
+        brand: newProduct.brand || undefined,
+        discountPercentage: 0,
+        rating: 0
+      };
+
+      await createProduct(productData).unwrap();
+      
+      setSnackbar({
+        open: true,
+        message: 'Product created (simulated)',
+        severity: 'success'
+      });
+      
+      setCreateDialogOpen(false);
+      setNewProduct({
+        title: '',
+        description: '',
+        price: '',
+        category: '',
+        stock: '',
+        brand: ''
+      });
+      
+      // Обновляем список через 1 секунду
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: `Error: ${error.data?.message || 'Failed to create product'}`,
+        severity: 'error'
+      });
+    }
+  };
+
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6" component={Link} to="/" sx={{ flexGrow: 1, textDecoration: 'none', color: 'white' }}>
-          Product Manager
-        </Typography>
-        
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {user ? (
-            <>
-              <Button color="inherit" component={Link} to="/products">
-                Products
-              </Button>
-              
-              {isAdmin && (
-                <Button color="inherit" component={Link} to="/products/new">
-                  Add Product
+    <>
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <Toolbar>
+          <Typography variant="h6" component={Link} to="/" sx={{ flexGrow: 1, textDecoration: 'none', color: 'white' }}>
+            Product Manager
+          </Typography>
+          
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {user ? (
+              <>
+                <Button color="inherit" component={Link} to="/products">
+                  Products
                 </Button>
-              )}
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ alignSelf: 'center' }}>
-                  Hello, {user.firstName || user.username}!
-                </Typography>
                 
                 {isAdmin && (
-                  <Chip 
-                    label="Admin" 
-                    size="small" 
-                    color="secondary" 
-                    sx={{ color: 'white', borderColor: 'white' }}
-                    variant="outlined"
-                  />
+                  <>
+                    <Button 
+                      color="inherit" 
+                      startIcon={<CreateIcon />}
+                      onClick={() => setCreateDialogOpen(true)}
+                      sx={{ minWidth: 'auto' }}
+                    >
+                      Add product
+                    </Button>
+                    
+                    <Button 
+                      color="inherit" 
+                      startIcon={<RefreshIcon />}
+                      onClick={handleRefresh}
+                      sx={{ minWidth: 'auto' }}
+                    >
+                      REFRESH
+                    </Button>
+                  </>
                 )}
-              </Box>
-              
-              <Button color="inherit" onClick={handleLogout}>
-                Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button color="inherit" component={Link} to="/login">
-                Login
-              </Button>
-              <Button color="inherit" component={Link} to="/register">
-                Register
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography sx={{ alignSelf: 'center' }}>
+                    Hello, {user.firstName || user.username}!
+                  </Typography>
+                  
+                  {isAdmin && (
+                    <Chip 
+                      label="Admin" 
+                      size="small" 
+                      color="secondary" 
+                      sx={{ color: 'white', borderColor: 'white' }}
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+                
+                <Button color="inherit" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button color="inherit" component={Link} to="/login">
+                  Login
+                </Button>
+                <Button color="inherit" component={Link} to="/register">
+                  Register
+                </Button>
+              </>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Диалог создания продукта */}
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Product</DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            This is a simulation. The product won't be saved on DummyJSON server.
+          </Alert>
+          
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Product Title"
+            fullWidth
+            value={newProduct.title}
+            onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
+            required
+          />
+          
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            value={newProduct.description}
+            onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+            required
+          />
+          
+          <TextField
+            margin="dense"
+            label="Price ($)"
+            type="number"
+            fullWidth
+            value={newProduct.price}
+            onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+            required
+            inputProps={{ min: 0, step: 0.01 }}
+          />
+          
+          <TextField
+            select
+            margin="dense"
+            label="Category"
+            fullWidth
+            value={newProduct.category}
+            onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+            required
+          >
+            <MenuItem value="">Select Category</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </MenuItem>
+            ))}
+          </TextField>
+          
+          <TextField
+            margin="dense"
+            label="Stock Quantity"
+            type="number"
+            fullWidth
+            value={newProduct.stock}
+            onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+            required
+            inputProps={{ min: 0 }}
+          />
+          
+          <TextField
+            margin="dense"
+            label="Brand (Optional)"
+            fullWidth
+            value={newProduct.brand}
+            onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
+          />
+        </DialogContent>
+        
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleCreateProduct}
+            variant="contained"
+            disabled={isCreating || !newProduct.title || !newProduct.description || !newProduct.price || !newProduct.category || !newProduct.stock}
+          >
+            {isCreating ? 'Creating...' : 'Create Product'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Снэкбар уведомлений */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

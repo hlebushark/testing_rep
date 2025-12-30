@@ -117,15 +117,7 @@ const ProductsPage = () => {
             Products
           </Typography>
           
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={() => window.location.reload()}
-            >
-              Refresh
-            </Button>
-            
+          <Box sx={{ display: 'flex', gap: 2 }}>            
             {isAdmin && (
               <Button
                 variant="contained"
