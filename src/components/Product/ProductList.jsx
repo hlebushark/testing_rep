@@ -24,6 +24,8 @@ import StorageIcon from '@mui/icons-material/Storage';
 import AllInboxIcon from '@mui/icons-material/AllInbox';
 import { useGetProductsQuery, useGetCategoriesQuery } from '../../api/productsApi';
 import ProductCard from './ProductCard';
+import { useSelector } from 'react-redux';
+import { selectIsAdmin } from '../../features/auth/authSlice';
 
 const ProductList = () => {
   const [page, setPage] = useState(1);
@@ -34,6 +36,7 @@ const ProductList = () => {
   const [order, setOrder] = useState('asc');
   const [productType, setProductType] = useState('all'); // 'all', 'api', 'local'
   const [localProducts, setLocalProducts] = useState([]);
+  const isAdmin = useSelector(selectIsAdmin);
   
   const limit = 9;
   
@@ -231,7 +234,7 @@ const ProductList = () => {
             >
               Refresh
             </Button>
-            {localCount > 0 && (
+            {localCount > 0 && isAdmin && (
               <Button
                 variant="outlined"
                 color="warning"
