@@ -81,7 +81,7 @@ const EditProductPage = () => {
     'womens-watches'
   ];
 
-  // Загрузка данных
+  // Load
   useEffect(() => {
     if (isLocalProduct) {
       // Load localStorage products 
