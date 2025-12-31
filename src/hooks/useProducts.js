@@ -23,7 +23,7 @@ export const useProducts = (options = {}) => {
     enableLocalProducts = true
   } = options;
 
-  // RTK Query запрос
+  // RTK Query 
   const {
     data: apiData,
     isLoading: apiLoading,
@@ -38,36 +38,33 @@ export const useProducts = (options = {}) => {
     order
   });
 
-  // Мутации
+  // Mutations
   const [createApiProduct, { isLoading: creatingApi }] = useCreateProductMutation();
   const [updateApiProduct, { isLoading: updatingApi }] = useUpdateProductMutation();
   const [deleteApiProduct, { isLoading: deletingApi }] = useDeleteProductMutation();
 
-  // Локальные продукты
+  // Local products
   const [localProducts, setLocalProducts] = useState([]);
   const [combinedData, setCombinedData] = useState(null);
 
-  // Загрузка локальных продуктов
+  // Load local products
   useEffect(() => {
     if (enableLocalProducts) {
       setLocalProducts(getLocalProducts());
     }
   }, [enableLocalProducts]);
 
-  // Объединение данных API и локальных
+  // Unite API and local
   useEffect(() => {
     if (apiData || localProducts.length > 0) {
       let products = [...(apiData?.products || [])];
       
-      // Добавляем локальные продукты
       if (enableLocalProducts && localProducts.length > 0) {
         const filteredLocal = localProducts.filter(product => {
-          // Фильтрация по поиску
           if (search && !product.title.toLowerCase().includes(search.toLowerCase()) && 
               !product.description.toLowerCase().includes(search.toLowerCase())) {
             return false;
           }
-          // Фильтрация по категории
           if (category && product.category !== category) {
             return false;
           }
@@ -77,7 +74,7 @@ export const useProducts = (options = {}) => {
         products = [...filteredLocal, ...products];
       }
 
-      // Сортировка
+      // Sort
       products.sort((a, b) => {
         let aValue = a[sortBy];
         let bValue = b[sortBy];
@@ -94,7 +91,7 @@ export const useProducts = (options = {}) => {
         }
       });
 
-      // Пагинация
+      // Pagination
       const paginatedProducts = products.slice(skip, skip + limit);
       
       setCombinedData({
@@ -107,7 +104,7 @@ export const useProducts = (options = {}) => {
     }
   }, [apiData, localProducts, search, category, sortBy, order, skip, limit, enableLocalProducts]);
 
-  // Создание продукта
+  //  Create
   const createProduct = async (productData) => {
     const newProduct = {
       ...productData,
@@ -116,11 +113,11 @@ export const useProducts = (options = {}) => {
       createdAt: new Date().toISOString()
     };
 
-    // Сохраняем локально
+    // Save local
     saveLocalProduct(newProduct);
     setLocalProducts(prev => [...prev, newProduct]);
 
-    // Пытаемся отправить на API (симуляция)
+    // Send to API (simulation)
     try {
       await createApiProduct(productData).unwrap();
     } catch (error) {
@@ -130,12 +127,12 @@ export const useProducts = (options = {}) => {
     return newProduct;
   };
 
-  // Обновление продукта
+  // Update
   const updateProduct = async ({ id, ...updates }) => {
     const isLocal = id.toString().startsWith('local_');
     
     if (isLocal) {
-      // Обновляем локальный
+      // Update local
       const updatedProduct = { 
         ...localProducts.find(p => p.id === id), 
         ...updates,
@@ -149,7 +146,7 @@ export const useProducts = (options = {}) => {
       
       return updatedProduct;
     } else {
-      // Обновляем через API + локально
+      // Update with API + local
       const apiProduct = apiData?.products?.find(p => p.id === id);
       if (apiProduct) {
         const updatedProduct = { ...apiProduct, ...updates };
@@ -161,19 +158,18 @@ export const useProducts = (options = {}) => {
     }
   };
 
-  // Удаление продукта
+  // Delete
   const deleteProduct = async (id) => {
     const isLocal = id.toString().startsWith('local_');
     
     if (isLocal) {
-      // Удаляем локальный
+      // Local delete
       deleteLocalProduct(id);
       setLocalProducts(prev => prev.filter(p => p.id !== id));
     } else {
-      // Удаляем через API
+      // API delete
       await deleteApiProduct(id).unwrap();
       
-      // Также удаляем из локального кеша если есть
       deleteLocalProduct(id);
       await refetch();
     }

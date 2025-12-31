@@ -31,14 +31,12 @@ const EditProductPage = () => {
   const isLocalProduct = id && id.toString().startsWith('local_');
   const isApiProduct = !isNew && !isLocalProduct;
   
-  // Для API продуктов
   const { data: apiProduct, isLoading: apiLoading, error: apiError } = 
     useGetProductQuery(isApiProduct ? id : null);
   
   const [updateApiProduct, { isLoading: isUpdatingApi }] = useUpdateProductMutation();
   const [createApiProduct, { isLoading: isCreatingApi }] = useCreateProductMutation();
   
-  // Состояние
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -56,7 +54,6 @@ const EditProductPage = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [newProductId, setNewProductId] = useState(null);
 
-  // Категории
   const categories = [
     'beauty',
     'fragrances', 
@@ -87,7 +84,7 @@ const EditProductPage = () => {
   // Загрузка данных
   useEffect(() => {
     if (isLocalProduct) {
-      // Загружаем локальный продукт из localStorage
+      // Load localStorage products 
       const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
       const product = localProducts.find(p => p.id === id);
       if (product) {
@@ -105,7 +102,7 @@ const EditProductPage = () => {
         });
       }
     } else if (apiProduct && isApiProduct) {
-      // Загружаем API продукт
+      // Load API products
       setFormData({
         title: apiProduct.title || '',
         description: apiProduct.description || '',
@@ -120,7 +117,6 @@ const EditProductPage = () => {
     }
   }, [apiProduct, id, isNew, isLocalProduct, isApiProduct]);
 
-  // Если не админ
   if (!isAdmin) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -155,7 +151,7 @@ const EditProductPage = () => {
       };
 
       if (isNew) {
-        // ========== СОЗДАНИЕ нового продукта ==========
+        // ========== Create new product ==========
         const newProductId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const newProduct = {
           ...productData,
@@ -164,14 +160,14 @@ const EditProductPage = () => {
           createdAt: new Date().toISOString()
         };
 
-        // Сохраняем локально
+        // Save local
         const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
         localProducts.push(newProduct);
         localStorage.setItem('local_products', JSON.stringify(localProducts));
         
         setNewProductId(newProductId);
 
-        // Пытаемся отправить на API (симуляция)
+        // Respond to API (simulation)
         try {
           await createApiProduct(productData).unwrap();
         } catch (apiError) {
@@ -185,20 +181,19 @@ const EditProductPage = () => {
         
         setSnackbarOpen(true);
         
-        // После показа уведомления переходим к новому продукту
         setTimeout(() => {
           navigate(`/products/${newProductId}`);
         }, 1500);
         
       } else if (isLocalProduct) {
-        // ========== РЕДАКТИРОВАНИЕ локального продукта ==========
+        // ========== Edit local product ==========
         const updatedProduct = {
           ...localProduct,
           ...productData,
           updatedAt: new Date().toISOString()
         };
 
-        // Обновляем в localStorage (ЗАМЕНЯЕМ, не добавляем новый)
+        // Update to localStorage
         const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
         const updatedProducts = localProducts.map(p => 
           p.id === id ? updatedProduct : p
@@ -212,37 +207,36 @@ const EditProductPage = () => {
         
         setSnackbarOpen(true);
         
-        // Переходим к ОБНОВЛЕННОМУ продукту (тот же ID)
         setTimeout(() => {
           navigate(`/products/${id}`);
         }, 1500);
         
       } else if (isApiProduct) {
-        // ========== РЕДАКТИРОВАНИЕ API продукта ==========
-        // 1. Создаем локальную копию с обновлениями
+        // ========== Edit API product ==========
+        // 1. Create local copy with updates
         const updatedLocalProduct = {
           ...productData,
-          id: `local_${id}`, // Новый ID для локальной копии
-          originalApiId: id, // Сохраняем ссылку на оригинальный API ID
+          id: `local_${id}`, // New copy ID
+          originalApiId: id, // API ID
           isLocal: true,
           isEditedApiProduct: true,
           originalUpdatedAt: apiProduct.updatedAt,
           updatedAt: new Date().toISOString()
         };
 
-        // 2. Получаем текущие локальные продукты
+        // 2. Get local products
         const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
         
-        // 3. Удаляем старую локальную копию этого API продукта (если есть)
+        // 3. Delete old copy
         const filteredProducts = localProducts.filter(p => 
           !(p.originalApiId === id || p.id === `local_${id}`)
         );
         
-        // 4. Добавляем новую версию
+        // 4. Add new version
         filteredProducts.push(updatedLocalProduct);
         localStorage.setItem('local_products', JSON.stringify(filteredProducts));
         
-        // 5. Пытаемся обновить через API (симуляция)
+        // 5. API update (simulation)
         try {
           await updateApiProduct({ id, ...productData }).unwrap();
         } catch (apiError) {
@@ -258,7 +252,7 @@ const EditProductPage = () => {
         
         setSnackbarOpen(true);
         
-        // 6. Переходим к НОВОЙ локальной копии
+        // 6. New local copy
         setTimeout(() => {
           navigate(`/products/${updatedLocalProduct.id}`);
         }, 1500);
@@ -277,7 +271,6 @@ const EditProductPage = () => {
     if (window.confirm(`Delete this product? ${isLocalProduct ? '(Local product will be removed)' : '(Simulation)'}`)) {
       try {
         if (isLocalProduct) {
-          // Удаляем локальный продукт
           const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
           const updatedProducts = localProducts.filter(p => p.id !== id);
           localStorage.setItem('local_products', JSON.stringify(updatedProducts));
@@ -291,7 +284,6 @@ const EditProductPage = () => {
           setTimeout(() => navigate('/products'), 1000);
           
         } else if (isApiProduct) {
-          // Для API продуктов удаляем только локальные копии
           const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
           const updatedProducts = localProducts.filter(p => 
             !(p.originalApiId === id || p.id === `local_${id}`)
@@ -527,7 +519,7 @@ const EditProductPage = () => {
         </form>
       </Paper>
 
-      {/* Снэкбар для уведомлений */}
+      {/* Notification snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}

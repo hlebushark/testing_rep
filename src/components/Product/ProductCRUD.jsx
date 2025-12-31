@@ -149,7 +149,7 @@ const ProductCRUD = ({ product, onSuccess }) => {
 
   return (
     <>
-      {/* Кнопки действий */}
+      {/* Activity buttons*/}
       <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
         <Button
           variant="contained"
@@ -176,7 +176,7 @@ const ProductCRUD = ({ product, onSuccess }) => {
         )}
       </Box>
 
-      {/* Диалог создания/редактирования */}
+      {/* create/edit */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           {mode === 'create' ? 'Create New Product' : 'Edit Product'}
@@ -277,7 +277,7 @@ const ProductCRUD = ({ product, onSuccess }) => {
         </form>
       </Dialog>
 
-      {/* Снэкбар уведомлений */}
+      {/* Notification snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

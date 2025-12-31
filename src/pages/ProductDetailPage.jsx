@@ -27,7 +27,6 @@ const ProductDetailPage = () => {
   
   const isLocalProduct = id && id.toString().startsWith('local_');
   
-  // Для API продуктов
   const { data: apiProduct, isLoading: apiLoading, error: apiError } = 
     useGetProductQuery(isLocalProduct ? null : id);
   
@@ -35,7 +34,6 @@ const ProductDetailPage = () => {
   const [localProduct, setLocalProduct] = useState(null);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
 
-  // Загрузка локального продукта
   useEffect(() => {
     if (isLocalProduct) {
       setIsLoadingLocal(true);
@@ -50,7 +48,7 @@ const ProductDetailPage = () => {
     if (window.confirm(`Delete this product? ${isLocalProduct ? '(Local product will be removed)' : '(Simulation)'}`)) {
       try {
         if (isLocalProduct) {
-          // Удаляем локальный продукт
+          // delete local
           const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
           const updatedProducts = localProducts.filter(p => p.id !== id);
           localStorage.setItem('local_products', JSON.stringify(updatedProducts));
@@ -58,7 +56,7 @@ const ProductDetailPage = () => {
           alert('Product deleted successfully!');
           navigate('/products');
         } else {
-          // Удаляем через API (симуляция)
+          // delete api (simulation)
           await deleteApiProduct(id).unwrap();
           alert('Product deletion simulated');
           navigate('/products');

@@ -3,22 +3,22 @@ import {
   getLocalProducts
 } from './localProductsStore';
 
-// Универсальная функция удаления продукта
+// Delete product
 export const deleteProduct = async (productId, deleteApiMutation, onSuccess) => {
   const isLocal = productId.toString().startsWith('local_');
   
   if (isLocal) {
-    // Удаляем локальный продукт
+    // local delete
     const success = deleteLocalProduct(productId);
     if (success && onSuccess) {
       onSuccess();
     }
     return { success, isLocal: true };
   } else {
-    // Удаляем через API
+    // API delete
     try {
       await deleteApiMutation(productId).unwrap();
-      // Также удаляем локальную копию если есть
+      // delete copy
       deleteLocalProduct(productId);
       if (onSuccess) {
         onSuccess();
@@ -31,7 +31,6 @@ export const deleteProduct = async (productId, deleteApiMutation, onSuccess) => 
   }
 };
 
-// Получить продукт (из API или локального хранилища)
 export const getProduct = async (productId, getApiQuery) => {
   const isLocal = productId.toString().startsWith('local_');
   

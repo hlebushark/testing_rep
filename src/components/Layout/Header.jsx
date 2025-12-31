@@ -19,7 +19,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout, selectCurrentUser, selectIsAdmin } from '../../features/auth/authSlice';
-import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CreateIcon from '@mui/icons-material/Create';
 import { useProducts } from '../../hooks/useProducts';
