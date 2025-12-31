@@ -1,7 +1,7 @@
 {
   "name": "task3",
   "version": "1.0.0",
-  "homepage": "./",
+  "homepage": "https://hlebushark.github.io/testing_rep/",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
