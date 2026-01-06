@@ -76,13 +76,16 @@ const ProductList = () => {
     
     return () => clearTimeout(timer);
   }, [searchTerm]);
+  
+  const hasCategory = category && category !== '';
+  const hasSearch = debouncedSearch && debouncedSearch.trim() !== '';
 
   // Products Query
   const { data: apiData, isLoading, error, refetch } = useGetProductsQuery({
     limit: 100, 
     skip: 0,
-    search: debouncedSearch,
-    category,
+    search: hasSearch && !hasCategory ? debouncedSearch : '', 
+    category: hasCategory ? category : '', 
     sortBy,
     order
   });
@@ -92,22 +95,36 @@ const ProductList = () => {
     let allProducts = [];
     
     if (apiData?.products) {
-      const apiProducts = apiData.products.map(product => ({
+      let apiProducts = apiData.products.map(product => ({
         ...product,
         source: 'api',
         isLocal: false
       }));
+      
+      if (hasCategory && hasSearch) {
+        const searchLower = debouncedSearch.toLowerCase();
+        apiProducts = apiProducts.filter(product => 
+          product.title?.toLowerCase().includes(searchLower) ||
+          product.description?.toLowerCase().includes(searchLower) ||
+          product.brand?.toLowerCase().includes(searchLower)
+        );
+      }
+      
       allProducts = [...allProducts, ...apiProducts];
     }
     
     if (localProducts.length > 0) {
       const filteredLocal = localProducts.filter(product => {
-        // Find local
-        if (searchTerm && !product.title?.toLowerCase().includes(searchTerm.toLowerCase()) && 
-            !product.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
+        if (hasSearch) {
+          const searchLower = debouncedSearch.toLowerCase();
+          const matchesSearch = 
+            product.title?.toLowerCase().includes(searchLower) ||
+            product.description?.toLowerCase().includes(searchLower) ||
+            product.brand?.toLowerCase().includes(searchLower);
+          
+          if (!matchesSearch) return false;
         }
-        if (category && product.category !== category) {
+        if (hasCategory && product.category !== category) {
           return false;
         }
         return true;
@@ -373,7 +390,7 @@ const ProductList = () => {
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Showing {paginatedProducts.length} of {totalProducts} products
-                  {searchTerm && ` for "${searchTerm}"`}
+                  {debouncedSearch && ` for "${debouncedSearch}"`}
                   {category && ` in ${category}`}
                   {productType === 'api' && ' (API only)'}
                   {productType === 'local' && ' (Local only)'}
