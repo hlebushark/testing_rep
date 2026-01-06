@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE_URL } from '../utils/constants';
+import { API_BASE_URL, TAGS, API_ENDPOINTS } from '../utils/constants';
 
 export const productsApi = createApi({
   reducerPath: 'productsApi',
@@ -13,7 +13,7 @@ export const productsApi = createApi({
       return headers;
     }
   }),
-  tagTypes: ['Product'],
+  tagTypes: [TAGS.PRODUCT],
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: ({ 
@@ -24,14 +24,14 @@ export const productsApi = createApi({
         sortBy = 'title',
         order = 'asc'
       }) => {
-        let url = 'products';
+        let url = API_ENDPOINTS.PRODUCTS;
         const params = new URLSearchParams();
         
         if (search) {
-          url = 'products/search';
+          url = API_ENDPOINTS.PRODUCTS_SEARCH;
           params.append('q', search);
         } else if (category) {
-          url = `products/category/${category}`;
+          url = `${API_ENDPOINTS.PRODUCTS_CATEGORY}/${category}`;
         }
         
         if (limit > 0) {
@@ -50,26 +50,25 @@ export const productsApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.products.map(({ id }) => ({ type: 'Product', id })),
-              { type: 'Product', id: 'LIST' },
+              ...result.products.map(({ id }) => ({ type: TAGS.PRODUCT, id })),
+              { type: TAGS.PRODUCT, id: 'LIST' },
             ]
-          : [{ type: 'Product', id: 'LIST' }],
+          : [{ type: TAGS.PRODUCT, id: 'LIST' }],
       keepUnusedDataFor: 60,
     }),
     
     getProduct: builder.query({
-      query: (id) => `products/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Product', id }],
+      query: (id) => `${API_ENDPOINTS.PRODUCTS}/${id}`,
+      providesTags: (result, error, id) => [{ type: TAGS.PRODUCT, id }],
     }),
     
     getCategories: builder.query({
-      query: () => 'products/categories'
+      query: () => API_ENDPOINTS.PRODUCTS_CATEGORIES
     }),
     
-    // CREATE
     createProduct: builder.mutation({
       query: (newProduct) => ({
-        url: 'products/add',
+        url: `${API_ENDPOINTS.PRODUCTS}/add`,
         method: 'POST',
         body: newProduct,
         headers: {
@@ -111,13 +110,12 @@ export const productsApi = createApi({
           patchResult.undo();
         }
       },
-      invalidatesTags: [{ type: 'Product', id: 'LIST' }],
+      invalidatesTags: [{ type: TAGS.PRODUCT, id: 'LIST' }],
     }),
     
-    // UPDATE
     updateProduct: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `products/${id}`,
+        url: `${API_ENDPOINTS.PRODUCTS}/${id}`,
         method: 'PUT',
         body: updates,
         headers: {
@@ -147,13 +145,12 @@ export const productsApi = createApi({
           patchResult.undo();
         }
       },
-      invalidatesTags: (result, error, { id }) => [{ type: 'Product', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: TAGS.PRODUCT, id }],
     }),
     
-    // DELETE
     deleteProduct: builder.mutation({
       query: (id) => ({
-        url: `products/${id}`,
+        url: `${API_ENDPOINTS.PRODUCTS}/${id}`,
         method: 'DELETE'
       }),
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
@@ -188,7 +185,7 @@ export const productsApi = createApi({
           }
         }
       },
-      invalidatesTags: [{ type: 'Product', id: 'LIST' }],
+      invalidatesTags: [{ type: TAGS.PRODUCT, id: 'LIST' }],
     })
   })
 });

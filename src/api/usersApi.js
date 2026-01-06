@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE_URL } from '../utils/constants';
+import { API_BASE_URL, TAGS, API_ENDPOINTS } from '../utils/constants';
 
 export const usersApi = createApi({
   reducerPath: 'usersApi',
@@ -13,47 +13,47 @@ export const usersApi = createApi({
       return headers;
     }
   }),
-  tagTypes: ['User'],
+  tagTypes: [TAGS.USER],
   endpoints: (builder) => ({
     // Registration of a new user
     registerUser: builder.mutation({
       query: (userData) => ({
-        url: 'users/add',
+        url: API_ENDPOINTS.USERS_ADD,
         method: 'POST',
         body: userData
       }),
-      invalidatesTags: ['User']
+      invalidatesTags: TAGS.USER
     }),
     
     // Getting information about the current user
     getCurrentUser: builder.query({
-      query: () => 'auth/me',
-      providesTags: ['User']
+      query: () => API_ENDPOINTS.AUTH_ME,
+      providesTags: TAGS.USER
     }),
     
     // User update
     updateUser: builder.mutation({
       query: ({ id, ...updates }) => ({
-        url: `users/${id}`,
+        url: `${API_ENDPOINTS.USERS}/${id}`,
         method: 'PUT',
         body: updates
       }),
-      invalidatesTags: ['User']
+      invalidatesTags: TAGS.USER
     }),
     
     // Getting a list of users (for admin)
     getUsers: builder.query({
-      query: () => 'users',
-      providesTags: ['User']
+      query: () => API_ENDPOINTS.USERS,
+      providesTags: TAGS.USER
     }),
     
     // Delete user (for admin)
     deleteUser: builder.mutation({
       query: (id) => ({
-        url: `users/${id}`,
+        url: `${API_ENDPOINTS.USERS}/${id}`,
         method: 'DELETE'
       }),
-      invalidatesTags: ['User']
+      invalidatesTags: TAGS.USER
     })
   })
 });

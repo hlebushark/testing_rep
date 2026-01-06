@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE_URL } from '../../utils/constants';
+import { API_BASE_URL, API_ENDPOINTS } from '../../utils/constants';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
@@ -15,7 +15,7 @@ export const authApi = createApi({
     // Login is the correct endpoint
     login: builder.mutation({
       query: (credentials) => ({
-        url: '/auth/login',
+        url: API_ENDPOINTS.AUTH_LOGIN,
         method: 'POST',
         body: JSON.stringify(credentials),
         headers: {
@@ -36,7 +36,7 @@ export const authApi = createApi({
     // Getting the current user's data
     getMe: builder.query({
       query: (token) => ({
-        url: '/auth/me',
+        url: API_ENDPOINTS.AUTH_ME,
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,7 +46,7 @@ export const authApi = createApi({
     // Token renewal
     refreshToken: builder.mutation({
       query: (refreshToken) => ({
-        url: '/auth/refresh',
+        url: API_ENDPOINTS.AUTH_REFRESH,
         method: 'POST',
         body: JSON.stringify({ refreshToken })
       })

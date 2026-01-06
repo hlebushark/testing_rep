@@ -19,6 +19,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../features/auth/authSlice';
 import { useGetProductQuery, useDeleteProductMutation } from '../api/productsApi';
+import { DEFAULT_IMAGES } from '../utils/constants';
+
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -114,7 +116,7 @@ const ProductDetailPage = () => {
     );
   }
 
-  const PLACEHOLDER_IMAGE = 'https://placehold.co/400x400/FFFFFF/CCCCCC?text=Product+Image';
+  const PLACEHOLDER_IMAGE = DEFAULT_IMAGES.PRODUCT_DETAIL;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>

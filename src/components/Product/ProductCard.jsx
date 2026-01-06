@@ -16,8 +16,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { selectIsAdmin } from '../../features/auth/authSlice';
 import { useDeleteProductMutation } from '../../api/productsApi';
+import { DEFAULT_IMAGES } from '../../utils/constants';
 
-const PLACEHOLDER_IMAGE = 'https://placehold.co/300x200/FFFFFF/CCCCCC?text=No+Image';
+const PLACEHOLDER_IMAGE = DEFAULT_IMAGES.PRODUCT;
 
 const ProductCard = ({ product, onDelete }) => {
   const isAdmin = useSelector(selectIsAdmin);
