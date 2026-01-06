@@ -47,7 +47,6 @@ export const useProducts = (options = {}) => {
   const [localProducts, setLocalProducts] = useState([]);
   const [combinedData, setCombinedData] = useState(null);
 
-  // Load local products
   useEffect(() => {
     if (enableLocalProducts) {
       setLocalProducts(getLocalProducts());
@@ -91,7 +90,6 @@ export const useProducts = (options = {}) => {
         }
       });
 
-      // Pagination
       const paginatedProducts = products.slice(skip, skip + limit);
       
       setCombinedData({
@@ -104,7 +102,6 @@ export const useProducts = (options = {}) => {
     }
   }, [apiData, localProducts, search, category, sortBy, order, skip, limit, enableLocalProducts]);
 
-  //  Create
   const createProduct = async (productData) => {
     const newProduct = {
       ...productData,
@@ -127,7 +124,6 @@ export const useProducts = (options = {}) => {
     return newProduct;
   };
 
-  // Update
   const updateProduct = async ({ id, ...updates }) => {
     const isLocal = id.toString().startsWith('local_');
     
@@ -158,7 +154,6 @@ export const useProducts = (options = {}) => {
     }
   };
 
-  // Delete
   const deleteProduct = async (id) => {
     const isLocal = id.toString().startsWith('local_');
     
