@@ -82,7 +82,7 @@ const ProductList = () => {
     limit: 100, 
     skip: 0,
     search: debouncedSearch,
-    category: productType === 'api' ? category : '', 
+    category,
     sortBy,
     order
   });
