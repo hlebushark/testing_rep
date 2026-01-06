@@ -21,6 +21,7 @@ import {
   useUpdateProductMutation, 
   useCreateProductMutation 
 } from '../api/productsApi';
+import { PRODUCT_CATEGORIES } from '../utils/constants';
 
 const EditProductPage = () => {
   const { id } = useParams();
@@ -53,33 +54,6 @@ const EditProductPage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [newProductId, setNewProductId] = useState(null);
-
-  const categories = [
-    'beauty',
-    'fragrances', 
-    'furniture',
-    'groceries',
-    'home-decoration',
-    'kitchen-accessories',
-    'laptops',
-    'mens-shirts',
-    'mens-shoes',
-    'mens-watches',
-    'mobile-accessories',
-    'motorcycle',
-    'skin-care',
-    'smartphones',
-    'sports-accessories',
-    'sunglasses',
-    'tablets',
-    'tops',
-    'vehicle',
-    'womens-bags',
-    'womens-dresses',
-    'womens-jewellery',
-    'womens-shoes',
-    'womens-watches'
-  ];
 
   // Load
   useEffect(() => {
@@ -433,7 +407,7 @@ const EditProductPage = () => {
             required
           >
             <MenuItem value="">Select Category</MenuItem>
-            {categories.map((cat) => (
+            {PRODUCT_CATEGORIES.map((cat) => (
               <MenuItem key={cat} value={cat}>
                 {cat.split('-').map(word => 
                   word.charAt(0).toUpperCase() + word.slice(1)

@@ -20,6 +20,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { selectIsAdmin } from '../features/auth/authSlice';
 import ProductList from '../components/Product/ProductList';
 import { useCreateProductMutation } from '../api/productsApi';
+import { PRODUCT_CATEGORIES } from '../utils/constants';
 
 const ProductsPage = () => {
   const isAdmin = useSelector(selectIsAdmin);
@@ -41,33 +42,6 @@ const ProductsPage = () => {
   });
   
   const [createProduct] = useCreateProductMutation();
-
-  const categories = [
-    'beauty',
-    'fragrances', 
-    'furniture',
-    'groceries',
-    'home-decoration',
-    'kitchen-accessories',
-    'laptops',
-    'mens-shirts',
-    'mens-shoes',
-    'mens-watches',
-    'mobile-accessories',
-    'motorcycle',
-    'skin-care',
-    'smartphones',
-    'sports-accessories',
-    'sunglasses',
-    'tablets',
-    'tops',
-    'vehicle',
-    'womens-bags',
-    'womens-dresses',
-    'womens-jewellery',
-    'womens-shoes',
-    'womens-watches'
-  ];
 
   const handleCreateProduct = async () => {
     setIsCreating(true);
@@ -249,7 +223,7 @@ const ProductsPage = () => {
             disabled={isCreating}
           >
             <MenuItem value="">Select Category</MenuItem>
-            {categories.map((cat) => (
+            {PRODUCT_CATEGORIES.map((cat) => (
               <MenuItem key={cat} value={cat}>
                 {cat.split('-').map(word => 
                   word.charAt(0).toUpperCase() + word.slice(1)

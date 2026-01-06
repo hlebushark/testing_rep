@@ -23,6 +23,7 @@ import {
   useUpdateProductMutation, 
   useDeleteProductMutation 
 } from '../../api/productsApi';
+import { PRODUCT_CATEGORIES } from '../../utils/constants';
 
 const ProductCRUD = ({ product, onSuccess }) => {
   const isAdmin = useSelector(selectIsAdmin);
@@ -140,13 +141,6 @@ const ProductCRUD = ({ product, onSuccess }) => {
     }
   };
 
-  const categories = [
-    'smartphones', 'laptops', 'fragrances', 'skincare', 'groceries',
-    'home-decoration', 'furniture', 'tops', 'womens-dresses', 'womens-shoes',
-    'mens-shirts', 'mens-shoes', 'mens-watches', 'womens-watches',
-    'womens-bags', 'womens-jewellery', 'sunglasses', 'automotive', 'motorcycle'
-  ];
-
   return (
     <>
       {/* Activity buttons*/}
@@ -227,7 +221,7 @@ const ProductCRUD = ({ product, onSuccess }) => {
               margin="normal"
               required
             >
-              {categories.map((cat) => (
+              {PRODUCT_CATEGORIES.map((cat) => (
                 <MenuItem key={cat} value={cat}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </MenuItem>

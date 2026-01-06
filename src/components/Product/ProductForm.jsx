@@ -12,9 +12,9 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
   useCreateProductMutation,
-  useUpdateProductMutation,
-  useGetCategoriesQuery
+  useUpdateProductMutation
 } from '../../api/productsApi';
+import { PRODUCT_CATEGORIES } from '../../utils/constants';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const validationSchema = yup.object({
@@ -28,7 +28,7 @@ const validationSchema = yup.object({
 const ProductForm = ({ product }) => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { data: categories } = useGetCategoriesQuery();
+  const { data: categories } = PRODUCT_CATEGORIES;
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
