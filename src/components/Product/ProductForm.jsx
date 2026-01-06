@@ -28,7 +28,6 @@ const validationSchema = yup.object({
 const ProductForm = ({ product }) => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { data: categories } = PRODUCT_CATEGORIES;
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
@@ -118,7 +117,7 @@ const ProductForm = ({ product }) => {
               error={formik.touched.category && Boolean(formik.errors.category)}
               helperText={formik.touched.category && formik.errors.category}
             >
-              {categories?.map((category) => (
+              {PRODUCT_CATEGORIES.map((category) => (
                 <MenuItem key={category.slug} value={category.slug}>
                   {category.name}
                 </MenuItem>

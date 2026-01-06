@@ -277,8 +277,10 @@ const ProductList = () => {
                 >
                   <MenuItem value="">All Categories</MenuItem>
                   {PRODUCT_CATEGORIES.map((cat) => (
-                    <MenuItem key={cat.slug} value={cat.slug}>
-                      {cat.name}
+                    <MenuItem key={cat} value={cat}>
+                      {cat.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ')}
                     </MenuItem>
                   ))}
                 </Select>
